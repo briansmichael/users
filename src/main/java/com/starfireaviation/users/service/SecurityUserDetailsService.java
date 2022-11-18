@@ -16,9 +16,9 @@
 
 package com.starfireaviation.users.service;
 
-import com.starfireaviation.groundschool.model.SecurityUserDetails;
-import com.starfireaviation.groundschool.model.User;
-import com.starfireaviation.groundschool.model.UserRepository;
+import com.starfireaviation.users.model.SecurityUserDetails;
+import com.starfireaviation.common.model.User;
+import com.starfireaviation.users.model.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;

@@ -16,16 +16,12 @@
 
 package com.starfireaviation.users.service;
 
-import com.starfireaviation.groundschool.exception.ResourceNotFoundException;
-import com.starfireaviation.groundschool.model.PasswordResetToken;
-import com.starfireaviation.groundschool.model.PasswordResetTokenRepository;
-import com.starfireaviation.groundschool.model.User;
-import com.starfireaviation.groundschool.model.UserModel;
-import com.starfireaviation.groundschool.model.UserRepository;
-import com.starfireaviation.groundschool.model.VerificationToken;
-import com.starfireaviation.groundschool.model.VerificationTokenRepository;
-import com.starfireaviation.model.CommonConstants;
-import com.starfireaviation.model.Role;
+import com.starfireaviation.common.CommonConstants;
+import com.starfireaviation.common.exception.ResourceNotFoundException;
+import com.starfireaviation.common.model.Role;
+import com.starfireaviation.users.model.UserEntity;
+import com.starfireaviation.users.model.UserModel;
+import com.starfireaviation.users.model.UserRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpMethod;
@@ -98,13 +94,13 @@ public class UserService {
      * @throws ResourceNotFoundException when no user is found for the provided user
      *                                   ID
      */
-    public User store(final User user) throws ResourceNotFoundException {
+    public UserEntity store(final UserEntity user) throws ResourceNotFoundException {
         if (user == null) {
             return user;
         }
         final Long userId = user.getId();
         if (userId != null) {
-            final User existingUser = findByIdWithPassword(userId);
+            final UserEntity existingUser = findByIdWithPassword(userId);
             if (existingUser == null) {
                 final String msg = String.format("No user found for ID [%s]", userId);
                 log.warn(msg);
@@ -134,11 +130,11 @@ public class UserService {
      * @return list of Users
      * @throws ResourceNotFoundException when no user is found
      */
-    public List<User> getAll() throws ResourceNotFoundException {
-        final List<User> users = new ArrayList<>();
-        final List<User> userEntities = userRepository.findAll();
-        for (final User userEntity : userEntities) {
-            final User user = get(userEntity.getId());
+    public List<UserEntity> getAll() throws ResourceNotFoundException {
+        final List<UserEntity> users = new ArrayList<>();
+        final List<UserEntity> userEntities = userRepository.findAll();
+        for (final UserEntity userEntity : userEntities) {
+            final UserEntity user = get(userEntity.getId());
             users.add(user);
         }
         return users;
@@ -152,8 +148,8 @@ public class UserService {
      * @throws ResourceNotFoundException when no user is found for the provided user
      *                                   ID
      */
-    public User get(final long id) throws ResourceNotFoundException {
-        final User user = userRepository.findById(id);
+    public UserEntity get(final long id) throws ResourceNotFoundException {
+        final UserEntity user = userRepository.findById(id);
         if (user == null) {
             throw new ResourceNotFoundException();
         }
@@ -167,8 +163,8 @@ public class UserService {
      * @param username username
      * @return User
      */
-    public User findByUsername(final String username) {
-        final User user = userRepository.findByUsername(username);
+    public UserEntity findByUsername(final String username) {
+        final UserEntity user = userRepository.findByUsername(username);
         user.setPassword(null);
         return user;
     }
@@ -179,8 +175,8 @@ public class UserService {
      * @param email User's email address
      * @return User
      */
-    public User findByEmail(final String email) {
-        final User user = userRepository.findByEmail(email);
+    public UserEntity findByEmail(final String email) {
+        final UserEntity user = userRepository.findByEmail(email);
         user.setPassword(null);
         return user;
     }
@@ -220,7 +216,7 @@ public class UserService {
                 try {
                     int seconds = Integer
                             .parseInt(responseResponseEntity.getHeaders().get("Retry-After").get(0).trim());
-                    Thread.sleep(seconds * CommonConstants.ONE_THOUSAND);
+                    Thread.sleep((long) seconds * CommonConstants.ONE_THOUSAND);
                     return checkIfPasswordIsCompromised(sha1Hash);
                 } catch (InterruptedException | NumberFormatException ignored) {
                 }
@@ -237,8 +233,8 @@ public class UserService {
      * @param userModel UserModel
      * @return User
      */
-    public User registerUser(final UserModel userModel) {
-        final User user = new User();
+    public UserEntity registerUser(final UserModel userModel) {
+        final UserEntity user = new UserEntity();
         user.setEmail(userModel.getEmail());
         user.setFirstName(userModel.getFirstName());
         user.setLastName(userModel.getLastName());
@@ -307,7 +303,7 @@ public class UserService {
      * @param email address
      * @return User
      */
-    public User findUserByEmail(final String email) {
+    public UserEntity findUserByEmail(final String email) {
         return userRepository.findByEmail(email);
     }
 
@@ -317,7 +313,7 @@ public class UserService {
      * @param user User
      * @param token token
      */
-    public void createPasswordResetTokenForUser(final User user, final String token) {
+    public void createPasswordResetTokenForUser(final UserEntity user, final String token) {
         final PasswordResetToken passwordResetToken = new PasswordResetToken(user, token);
         passwordResetTokenRepository.save(passwordResetToken);
     }
@@ -353,7 +349,7 @@ public class UserService {
      * @param token token
      * @return User
      */
-    public Optional<User> getUserByPasswordResetToken(final String token) {
+    public Optional<UserEntity> getUserByPasswordResetToken(final String token) {
         return Optional.ofNullable(passwordResetTokenRepository.findByToken(token).getUser());
     }
 
@@ -363,7 +359,7 @@ public class UserService {
      * @param user User
      * @param newPassword new password
      */
-    public void changePassword(final User user, final String newPassword) {
+    public void changePassword(final UserEntity user, final String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
     }
@@ -375,7 +371,7 @@ public class UserService {
      * @param oldPassword old password
      * @return same
      */
-    public boolean checkIfValidOldPassword(final User user, final String oldPassword) {
+    public boolean checkIfValidOldPassword(final UserEntity user, final String oldPassword) {
         return passwordEncoder.matches(oldPassword, user.getPassword());
     }
 
@@ -385,7 +381,7 @@ public class UserService {
      * @param userId User ID
      * @return UserEntity
      */
-    private User findByIdWithPassword(final long userId) {
+    private UserEntity findByIdWithPassword(final long userId) {
         return userRepository.findById(userId);
     }
 

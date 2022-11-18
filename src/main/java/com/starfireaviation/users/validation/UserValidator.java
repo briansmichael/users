@@ -16,12 +16,12 @@
 
 package com.starfireaviation.users.validation;
 
-import com.starfireaviation.groundschool.exception.ConflictException;
-import com.starfireaviation.groundschool.exception.InvalidPayloadException;
-import com.starfireaviation.groundschool.model.User;
-import com.starfireaviation.groundschool.model.UserRepository;
-import com.starfireaviation.groundschool.service.UserService;
-import com.starfireaviation.model.Role;
+import com.starfireaviation.common.exception.ConflictException;
+import com.starfireaviation.common.exception.InvalidPayloadException;
+import com.starfireaviation.common.model.User;
+import com.starfireaviation.users.model.UserRepository;
+import com.starfireaviation.users.service.UserService;
+import com.starfireaviation.common.model.Role;
 import lombok.extern.slf4j.Slf4j;
 
 import java.security.Principal;

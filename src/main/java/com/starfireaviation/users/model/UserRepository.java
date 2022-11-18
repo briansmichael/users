@@ -23,21 +23,21 @@ import java.util.List;
 /**
  * UserRepository.
  */
-public interface UserRepository extends Repository<User, Long> {
+public interface UserRepository extends Repository<UserEntity, Long> {
 
     /**
      * Deletes a user.
      *
      * @param user User
      */
-    void delete(User user);
+    void delete(UserEntity user);
 
     /**
      * Gets all users.
      *
      * @return list of Users
      */
-    List<User> findAll();
+    List<UserEntity> findAll();
 
     /**
      * Gets a user by ID.
@@ -45,7 +45,7 @@ public interface UserRepository extends Repository<User, Long> {
      * @param id Long
      * @return User
      */
-    User findById(long id);
+    UserEntity findById(long id);
 
     /**
      * Gets a user by Username.
@@ -53,7 +53,7 @@ public interface UserRepository extends Repository<User, Long> {
      * @param username String
      * @return User
      */
-    User findByUsername(String username);
+    UserEntity findByUsername(String username);
 
     /**
      * Gets a user by SMS Number.
@@ -61,7 +61,7 @@ public interface UserRepository extends Repository<User, Long> {
      * @param sms String
      * @return User
      */
-    User findBySms(String sms);
+    UserEntity findBySms(String sms);
 
     /**
      * Gets a user by Slack name.
@@ -69,7 +69,7 @@ public interface UserRepository extends Repository<User, Long> {
      * @param slack String
      * @return User
      */
-    User findBySlack(String slack);
+    UserEntity findBySlack(String slack);
 
     /**
      * Gets a user by Email Address.
@@ -77,7 +77,7 @@ public interface UserRepository extends Repository<User, Long> {
      * @param email String
      * @return User
      */
-    User findByEmail(String email);
+    UserEntity findByEmail(String email);
 
     /**
      * Saves a user.
@@ -85,5 +85,5 @@ public interface UserRepository extends Repository<User, Long> {
      * @param user User
      * @return User
      */
-    User save(User user);
+    UserEntity save(UserEntity user);
 }

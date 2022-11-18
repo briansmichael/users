@@ -16,17 +16,17 @@
 
 package com.starfireaviation.users.controller;
 
-import com.starfireaviation.groundschool.config.ApplicationProperties;
-import com.starfireaviation.groundschool.exception.AccessDeniedException;
-import com.starfireaviation.groundschool.exception.ConflictException;
-import com.starfireaviation.groundschool.exception.InvalidPayloadException;
-import com.starfireaviation.groundschool.exception.ResourceNotFoundException;
-import com.starfireaviation.groundschool.service.NotificationService;
-import com.starfireaviation.groundschool.util.CodeGenerator;
-import com.starfireaviation.model.CommonConstants;
-import com.starfireaviation.model.NotificationEventType;
-import com.starfireaviation.model.NotificationType;
-import com.starfireaviation.model.Role;
+import com.starfireaviation.common.model.User;
+import com.starfireaviation.users.config.ApplicationProperties;
+import com.starfireaviation.common.exception.AccessDeniedException;
+import com.starfireaviation.common.exception.ConflictException;
+import com.starfireaviation.common.exception.InvalidPayloadException;
+import com.starfireaviation.common.exception.ResourceNotFoundException;
+import com.starfireaviation.common.CommonConstants;
+import com.starfireaviation.common.model.NotificationType;
+import com.starfireaviation.common.model.Role;
+import com.starfireaviation.users.service.UserService;
+import com.starfireaviation.users.validation.UserValidator;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -47,6 +47,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.security.Principal;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * UserController.
@@ -54,9 +55,7 @@ import java.util.List;
 @Slf4j
 @CrossOrigin(origins = "*", allowedHeaders = "*")
 @RestController
-@RequestMapping({
-        "/participants"
-})
+@RequestMapping({ "/api/users" })
 public class UserController {
 
     /**
@@ -68,11 +67,6 @@ public class UserController {
      * UserValidator.
      */
     private final UserValidator userValidator;
-
-    /**
-     * NotificationService.
-     */
-    private final NotificationService notificationService;
 
     /**
      * ApplicationProperties.
@@ -89,18 +83,15 @@ public class UserController {
      *
      * @param uService   UserService
      * @param uValidator UserValidator
-     * @param nService   NotificationService
      * @param aProps     ApplicationProperties
      * @param encoder    BCryptPasswordEncoder
      */
     public UserController(final UserService uService,
                           final UserValidator uValidator,
-                          final NotificationService nService,
                           final ApplicationProperties aProps,
                           final BCryptPasswordEncoder encoder) {
         userService = uService;
         userValidator = uValidator;
-        notificationService = nService;
         applicationProperties = aProps;
         bCryptPasswordEncoder = encoder;
     }
@@ -124,16 +115,7 @@ public class UserController {
         } else {
             user.setRole(Role.STUDENT);
         }
-        final User response = userService.store(user);
-        notificationService.send(
-                response.getId(),
-                null,
-                null,
-                null,
-                null,
-                NotificationType.ALL,
-                NotificationEventType.USER_SETTINGS);
-        return response;
+        return userService.store(user);
     }
 
     /**
@@ -159,14 +141,6 @@ public class UserController {
             throw new AccessDeniedException("Current user is not authorized to update user information");
         }
         final User response = userService.store(user);
-        notificationService.send(
-                response.getId(),
-                null,
-                null,
-                null,
-                null,
-                NotificationType.ALL,
-                NotificationEventType.USER_SETTINGS);
         return response;
     }
 
@@ -180,9 +154,7 @@ public class UserController {
      *                                   perform operation
      * @throws ResourceNotFoundException when user is not found
      */
-    @GetMapping(path = {
-            "/{userId}"
-    })
+    @GetMapping(path = { "/{userId}" })
     public User get(@PathVariable("userId") final long userId, final Principal principal) throws AccessDeniedException,
             ResourceNotFoundException {
         userValidator.accessAdminInstructorOrSpecificUser(userId, principal);
@@ -195,9 +167,7 @@ public class UserController {
      * @param password password to check
      * @return count number of times password found in HIBP database
      */
-    @GetMapping(path = {
-            "/password/compromised"
-    })
+    @GetMapping(path = { "/password/compromised" })
     public int checkIfPasswordIsCompromised(@RequestParam("p") final String password) {
         if (password == null) {
             return 0;
@@ -211,9 +181,7 @@ public class UserController {
      * @param username to verify
      * @return success
      */
-    @GetMapping(path = {
-            "/username/{username}/available"
-    })
+    @GetMapping(path = { "/username/{username}/available" })
     public boolean checkUsername(@PathVariable("username") final String username) {
         return userService.findByUsername(username) == null;
     }
@@ -221,16 +189,26 @@ public class UserController {
     /**
      * Get all users.
      *
+     * @param username Optional username
+     * @param username Optional slack
      * @param principal Principal
-     * @return list of Users
+     * @return list of User IDs
      * @throws ResourceNotFoundException when user is not found
      * @throws AccessDeniedException     when user doesn't have permission to
      *                                   perform operation
      */
     @GetMapping
-    public List<User> list(final Principal principal) throws ResourceNotFoundException, AccessDeniedException {
+    public List<Long> list(@RequestParam(value = "username", required = false) final String username,
+                           @RequestParam(value = "slack", required = false) final String slack,
+                           final Principal principal) throws ResourceNotFoundException, AccessDeniedException {
         userValidator.accessAdminOrInstructor(principal);
-        return userService.getAll();
+        return userService
+                .getAll()
+                .stream()
+                .filter(u -> username == null || u.getUsername().equalsIgnoreCase(username))
+                .filter(u -> slack == null || u.getSlack().equalsIgnoreCase(slack))
+                .map(u -> u.getId())
+                .collect(Collectors.toList());
     }
 
     /**
@@ -241,9 +219,7 @@ public class UserController {
      * @return success
      * @throws ResourceNotFoundException when no user is found
      */
-    @GetMapping(path = {
-            "/{userId}/verify/{type}"
-    })
+    @GetMapping(path = { "/{userId}/verify/{type}" })
     public RedirectView verify(@PathVariable("userId") final long userId,
             @PathVariable("type") final NotificationType type)
             throws ResourceNotFoundException {
@@ -259,14 +235,6 @@ public class UserController {
                 default:
             }
             userService.store(user);
-            notificationService.send(
-                    userId,
-                    null,
-                    null,
-                    null,
-                    null,
-                    NotificationType.ALL,
-                    NotificationEventType.USER_VERIFIED);
         }
         return new RedirectView(applicationProperties.getUiHost());
     }
@@ -282,9 +250,7 @@ public class UserController {
      * @throws ResourceNotFoundException when no user is found
      *
      */
-    @PostMapping(path = {
-            "/{userId}/password/{verificationCode}"
-    })
+    @PostMapping(path = { "/{userId}/password/{verificationCode}" })
     public boolean updatePassword(
             @PathVariable("userId") final long userId,
             @PathVariable("verificationCode") final String verificationCode,
@@ -313,9 +279,7 @@ public class UserController {
      * @return success
      *
      */
-    @PostMapping(path = {
-            "/password/reset"
-    })
+    @PostMapping(path = { "/password/reset" })
     public boolean passwordReset(@RequestBody final String email) {
         boolean success = false;
         try {
@@ -323,14 +287,6 @@ public class UserController {
             if (user != null) {
                 user.setCode(CodeGenerator.generateCode(CommonConstants.FOUR));
                 userService.store(user);
-                notificationService.send(
-                        user.getId(),
-                        null,
-                        null,
-                        null,
-                        null,
-                        NotificationType.ALL,
-                        NotificationEventType.PASSWORD_RESET);
                 success = true;
             }
         } catch (ResourceNotFoundException rnfe) {
@@ -349,9 +305,7 @@ public class UserController {
      * @param request  HttpServletRequest
      * @param response HttpServletResponse
      */
-    @PostMapping(path = {
-            "/logout"
-    })
+    @PostMapping(path = { "/logout" })
     public void logout(final HttpServletRequest request, final HttpServletResponse response) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null) {

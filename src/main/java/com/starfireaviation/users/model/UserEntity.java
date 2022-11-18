@@ -16,13 +16,15 @@
 
 package com.starfireaviation.users.model;
 
-import com.starfireaviation.model.NotificationPreference;
-import com.starfireaviation.model.Role;
+import com.starfireaviation.common.model.NotificationPreference;
+import com.starfireaviation.common.model.Role;
 import lombok.Data;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.Id;
 import javax.persistence.Table;
+import java.io.Serializable;
 
 /**
  * User.
@@ -30,18 +32,18 @@ import javax.persistence.Table;
 @Data
 @Entity
 @Table(name = "GS_USER")
-public class User extends BaseEntity {
+public class UserEntity implements Serializable {
 
     /**
      * Default SerialVersionUID.
      */
     private static final long serialVersionUID = 1L;
 
-    public User() {
+    public UserEntity() {
         // Do nothing?
     }
 
-    public User(final User other) {
+    public UserEntity(final UserEntity other) {
         enabled = other.isEnabled();
         email = other.getEmail();
         emailVerified = other.isEmailVerified();
@@ -61,6 +63,12 @@ public class User extends BaseEntity {
         role = other.getRole();
         notificationPreference = other.getNotificationPreference();
     }
+
+    /**
+     * User ID.
+     */
+    @Id
+    private Long id;
 
     /**
      * Email.
